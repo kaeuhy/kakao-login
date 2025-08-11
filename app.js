@@ -49,6 +49,32 @@ async function call(method, uri, param, header) {
     return rtn.data;
 }
 
+// 카카오 인증 서버로 인가 코드 발급 요청
+// 사용자에게 추가 동의를 요청하는 경우, scope 값으로 동의항목 ID를 전달
+app.get("/authorize", function (req, res) {
+    let {scope} = req.query;
+    let scopeParam = "";
+    if (scope) {
+        scopeParam = "&scope=" + scope;
+    }
+
+    // 카카오 인증 서버로 리다이렉트
+    // 사용자 동의 후 리다이렉트 URI로 인가 코드가 전달
+    res.status(302).redirect(
+        `https://kauth.kakao.com/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code${scopeParam}\`
+    );
+});
+
+
+
+
+
+
+
+
+
+
+
 
 
 
