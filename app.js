@@ -67,42 +67,71 @@ app.get("/authorize", function (req, res) {
 
 // 액세스 토큰 요청 및 세션 저장
 app.get("/redirect", async function (req, res) {
-  // 인가 코드 발급 요청에 필요한 파라미터 구성
-  const param = qs.stringify({
-    grant_type: "authorization_code",   // 인증 방식 고정값
-    client_id: client_id,               // 내 앱의 REST API 키
-    redirect_uri: redirect_uri,         // 등록된 리다이렉트 URI
-    code: req.query.code,               // 전달받은 인가 코드
-    client_secret: client_secret,       // 선택: 클라이언트 시크릿(Client Secret) 사용 시 추가
-  });
+    // 인가 코드 발급 요청에 필요한 파라미터 구성
+    const param = qs.stringify({
+        grant_type: "authorization_code",   // 인증 방식 고정값
+        client_id: client_id,               // 내 앱의 REST API 키
+        redirect_uri: redirect_uri,         // 등록된 리다이렉트 URI
+        code: req.query.code,               // 전달받은 인가 코드
+        client_secret: client_secret,       // 선택: 클라이언트 시크릿(Client Secret) 사용 시 추가
+    });
 
-  // API 요청 헤더 설정
-  const header = { "content-type": "application/x-www-form-urlencoded" };
+    // API 요청 헤더 설정
+    const header = {"content-type": "application/x-www-form-urlencoded"};
 
-  // 카카오 인증 서버에 액세스 토큰 요청
-  const rtn = await call("POST", token_uri, param, header);
+    // 카카오 인증 서버에 액세스 토큰 요청
+    const rtn = await call("POST", token_uri, param, header);
 
-  // 발급받은 액세스 토큰을 세션에 저장 (로그인 상태 유지 목적)
-  req.session.key = rtn.access_token;
+    // 발급받은 액세스 토큰을 세션에 저장 (로그인 상태 유지 목적)
+    req.session.key = rtn.access_token;
 
-  // 로그인 완료 후 메인 페이지로 이동
-  res.status(302).redirect(\`${domain}/index.html?login=success`);
+    // 로그인 완료 후 메인 페이지로 이동
+    res.status(302).redirect(\`${domain}/index.html?login=success`
+)
+    ;
 });
 
 // 액세스 토큰을 사용해 로그인한 사용자의 정보 조회 요청
 app.get("/profile", async function (req, res) {
-  const uri = api_host + "/v2/user/me";  // 사용자 정보 조회 API 주소
-  const param = {};  // 사용자 정보 요청 시 파라미터는 필요 없음
-  const header = {
-    "content-type": "application/x-www-form-urlencoded",  // 요청 헤더 Content-Type 지정
-    Authorization: "Bearer " + req.session.key,  // 세션에 저장된 액세스 토큰 전달
-  };
+    const uri = api_host + "/v2/user/me";  // 사용자 정보 조회 API 주소
+    const param = {};  // 사용자 정보 요청 시 파라미터는 필요 없음
+    const header = {
+        "content-type": "application/x-www-form-urlencoded",  // 요청 헤더 Content-Type 지정
+        Authorization: "Bearer " + req.session.key,  // 세션에 저장된 액세스 토큰 전달
+    };
 
-  const rtn = await call("POST", uri, param, header);  // 카카오 API에 요청 전송
+    const rtn = await call("POST", uri, param, header);  // 카카오 API에 요청 전송
 
-  res.send(rtn);  // 조회한 사용자 정보를 클라이언트에 반환
+    res.send(rtn);  // 조회한 사용자 정보를 클라이언트에 반환
 });
 
+// 로그아웃 요청: 세션을 종료하고 사용자 로그아웃 처리
+app.get("/logout", async function (req, res) {
+    const uri = api_host + "/v1/user/logout";  // 로그아웃 API 주소
+    const header = {
+        Authorization: "Bearer " + req.session.key  // 세션에 저장된 액세스 토큰 전달
+    };
+
+    const rtn = await call("POST", uri, null, header);  // 카카오 API에 로그아웃 요청 전송
+    req.session.destroy();  // 세션 삭제 (로그아웃 처리)
+    res.send(rtn);  // 응답 결과 클라이언트에 반환
+});
+
+// 연결 해제 요청: 사용자와 앱의 연결을 해제하고 세션 종료
+app.get("/unlink", async function (req, res) {
+    const uri = api_host + "/v1/user/unlink";  // 연결 해제 API 주소
+    const header = {
+        Authorization: "Bearer " + req.session.key  // 세션에 저장된 액세스 토큰 전달
+    };
+
+    const rtn = await call("POST", uri, null, header);  // 카카오 API에 연결 해제 요청 전송
+    req.session.destroy();  // 세션 삭제 (연결 해제 처리)
+    res.send(rtn);  // 응답 결과 클라이언트에 반환
+});
+
+app.listen(port, () => {
+    console.log(`Server is running at ${domain}`);
+});
 
 
 
