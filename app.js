@@ -86,8 +86,23 @@ app.get("/redirect", async function (req, res) {
   req.session.key = rtn.access_token;
 
   // 로그인 완료 후 메인 페이지로 이동
-  res.status(302).redirect(\`${domain}/index.html?login=success\`);
+  res.status(302).redirect(\`${domain}/index.html?login=success`);
 });
+
+// 액세스 토큰을 사용해 로그인한 사용자의 정보 조회 요청
+app.get("/profile", async function (req, res) {
+  const uri = api_host + "/v2/user/me";  // 사용자 정보 조회 API 주소
+  const param = {};  // 사용자 정보 요청 시 파라미터는 필요 없음
+  const header = {
+    "content-type": "application/x-www-form-urlencoded",  // 요청 헤더 Content-Type 지정
+    Authorization: "Bearer " + req.session.key,  // 세션에 저장된 액세스 토큰 전달
+  };
+
+  const rtn = await call("POST", uri, param, header);  // 카카오 API에 요청 전송
+
+  res.send(rtn);  // 조회한 사용자 정보를 클라이언트에 반환
+});
+
 
 
 
