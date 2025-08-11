@@ -86,9 +86,7 @@ app.get("/redirect", async function (req, res) {
     req.session.key = rtn.access_token;
 
     // 로그인 완료 후 메인 페이지로 이동
-    res.status(302).redirect(\`${domain}/index.html?login=success`
-)
-    ;
+    res.status(302).redirect(`${domain}/index.html?login=success`);
 });
 
 // 액세스 토큰을 사용해 로그인한 사용자의 정보 조회 요청
